@@ -117,3 +117,7 @@ LexLens/
 ├── API.md                       # Complete REST API reference
 └── DEVELOPMENT.md               # Developer setup & contribution guidelines
 ```
+
+## 📜 License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](file:///c:/Users/Harsh%20Verma/Documents/Antigravity%20Projects/LexLens/LICENSE) file for complete details.
