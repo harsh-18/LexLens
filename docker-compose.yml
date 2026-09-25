@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  lexlens-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lexlens-platform
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:///./lexlens.db
+      - JWT_SECRET=production-secret-lexlens-deploy-2026
+    volumes:
+      - lexlens_storage:/app/storage
+      - lexlens_db:/app/data
+    restart: unless-stopped
+
+volumes:
+  lexlens_storage:
+  lexlens_db:
