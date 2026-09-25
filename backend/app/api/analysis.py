@@ -22,6 +22,7 @@ from backend.app.services.extractor import LegalExtractor
 from backend.app.services.contradiction import ContradictionDetector
 from backend.app.services.missing_protections import MissingProtectionAuditor
 from backend.app.services.ai_providers import AIProviderFactory
+from backend.app.services.cache import document_cache, query_cache
 
 logger = logging.getLogger(__name__)
 
@@ -48,16 +49,22 @@ def execute_analysis_pipeline(document_id: str, db: Session):
         )
         embed_provider = AIProviderFactory.get_embedding_provider()
         
-        # Clear existing chunks
+        # Clear existing chunks and query cache
         db.query(Chunk).filter(Chunk.document_id == document_id).delete()
-        for chk in chunks:
-            try:
-                emb = embed_provider.embed_query(chk.text)
-                emb_json = json.dumps(emb)
-            except Exception:
-                emb_json = None
+        query_cache.clear()
+        
+        # Batch embedding computation for maximum throughput
+        chunk_texts = [chk.text for chk in chunks]
+        try:
+            embeddings = embed_provider.embed_texts(chunk_texts)
+        except Exception as e:
+            logger.warning(f"Batch embedding fallback: {e}")
+            embeddings = [None] * len(chunks)
 
-            db.add(Chunk(
+        chunk_records = []
+        for chk, emb in zip(chunks, embeddings):
+            emb_json = json.dumps(emb) if emb else None
+            chunk_records.append(Chunk(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 page_number=chk.page_number,
@@ -66,6 +73,7 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 text=chk.text,
                 embedding_json=emb_json
             ))
+        db.add_all(chunk_records)
         db.commit()
 
         # 2. Extract Document Intelligence
@@ -91,20 +99,23 @@ def execute_analysis_pipeline(document_id: str, db: Session):
         db.query(Contradiction).filter(Contradiction.document_id == document_id).delete()
         db.query(MissingProtection).filter(MissingProtection.document_id == document_id).delete()
 
-        # Save Parties
-        for p in extracted.get("parties", []):
-            db.add(Party(
+        # Bulk Save Parties
+        parties_to_add = [
+            Party(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 name=p.get("name", "Unknown Party"),
                 role=p.get("role", "Party"),
                 party_type=p.get("party_type", "Entity")
-            ))
+            )
+            for p in extracted.get("parties", [])
+        ]
+        db.add_all(parties_to_add)
 
-        # Save Clauses
+        # Bulk Save Clauses
         extracted_clauses = extracted.get("clauses", [])
-        for c in extracted_clauses:
-            db.add(Clause(
+        clauses_to_add = [
+            Clause(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 clause_number=c.get("clause_number"),
@@ -116,11 +127,14 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 plain_explanation=c.get("plain_explanation"),
                 risk_note=c.get("risk_note"),
                 questions_to_ask=json.dumps(c.get("questions_to_ask", []))
-            ))
+            )
+            for c in extracted_clauses
+        ]
+        db.add_all(clauses_to_add)
 
-        # Save Obligations
-        for o in extracted.get("obligations", []):
-            db.add(Obligation(
+        # Bulk Save Obligations
+        obligations_to_add = [
+            Obligation(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 actor=o.get("actor", "Party"),
@@ -135,11 +149,14 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 source_clause_number=o.get("source_clause_number"),
                 source_page=o.get("source_page", 1),
                 excerpt=o.get("excerpt")
-            ))
+            )
+            for o in extracted.get("obligations", [])
+        ]
+        db.add_all(obligations_to_add)
 
-        # Save Rights
-        for r in extracted.get("rights", []):
-            db.add(Right(
+        # Bulk Save Rights
+        rights_to_add = [
+            Right(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 holder=r.get("holder", "Party"),
@@ -148,11 +165,14 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 source_clause_number=r.get("source_clause_number"),
                 source_page=r.get("source_page", 1),
                 excerpt=r.get("excerpt")
-            ))
+            )
+            for r in extracted.get("rights", [])
+        ]
+        db.add_all(rights_to_add)
 
-        # Save Deadlines
-        for idx, d in enumerate(extracted.get("deadlines", []), start=1):
-            db.add(Deadline(
+        # Bulk Save Deadlines
+        deadlines_to_add = [
+            Deadline(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 event=d.get("event", "Milestone"),
@@ -162,11 +182,14 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 order_index=idx,
                 source_clause_number=d.get("source_clause_number"),
                 source_page=d.get("source_page", 1)
-            ))
+            )
+            for idx, d in enumerate(extracted.get("deadlines", []), start=1)
+        ]
+        db.add_all(deadlines_to_add)
 
-        # Save Restrictions
-        for rst in extracted.get("restrictions", []):
-            db.add(Restriction(
+        # Bulk Save Restrictions
+        restrictions_to_add = [
+            Restriction(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 restriction_type=rst.get("restriction_type", "Restriction"),
@@ -176,11 +199,14 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 scope=rst.get("scope"),
                 source_clause_number=rst.get("source_clause_number"),
                 source_page=rst.get("source_page", 1)
-            ))
+            )
+            for rst in extracted.get("restrictions", [])
+        ]
+        db.add_all(restrictions_to_add)
 
-        # Save Financial Terms
-        for f in extracted.get("financial_terms", []):
-            db.add(FinancialTerm(
+        # Bulk Save Financial Terms
+        financial_terms_to_add = [
+            FinancialTerm(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 item=f.get("item", "Payment"),
@@ -189,12 +215,15 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 frequency=f.get("frequency"),
                 condition=f.get("condition"),
                 source_clause_number=f.get("source_clause_number")
-            ))
+            )
+            for f in extracted.get("financial_terms", [])
+        ]
+        db.add_all(financial_terms_to_add)
 
         # 3. Detect Contradictions
         contradictions = ContradictionDetector.detect_contradictions(extracted_clauses, full_text)
-        for ct in contradictions:
-            db.add(Contradiction(
+        contradictions_to_add = [
+            Contradiction(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 title=ct.get("title", "Contradiction Detected"),
@@ -206,23 +235,32 @@ def execute_analysis_pipeline(document_id: str, db: Session):
                 page_b=ct.get("page_b", 1),
                 explanation=ct.get("explanation", ""),
                 severity=ct.get("severity", "Moderate")
-            ))
+            )
+            for ct in contradictions
+        ]
+        db.add_all(contradictions_to_add)
 
         # 4. Audit Missing Protections
         missing_protections = MissingProtectionAuditor.audit_document(extracted_clauses, full_text, doc.document_type)
-        for m in missing_protections:
-            db.add(MissingProtection(
+        protections_to_add = [
+            MissingProtection(
                 id=str(uuid.uuid4()),
                 document_id=doc.id,
                 protection_type=m.get("protection_type", "Protection"),
                 description=m.get("description", ""),
                 recommendation=m.get("recommendation", ""),
                 severity=m.get("severity", "Notice")
-            ))
+            )
+            for m in missing_protections
+        ]
+        db.add_all(protections_to_add)
 
         doc.status = "analyzed"
         doc.error_message = None
         db.commit()
+
+        # Invalidate document cache to ensure fresh state is delivered
+        document_cache.delete(f"{doc.user_id}:{doc.id}")
     except Exception as e:
         logger.error(f"Analysis failed for {document_id}: {e}", exc_info=True)
         doc.status = "failed"

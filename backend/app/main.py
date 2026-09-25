@@ -88,6 +88,12 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
 
     response: Response = await call_next(request)
 
+    # Static Assets & API Cache-Control policies
+    if path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+
     # Production Grade Security Headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"

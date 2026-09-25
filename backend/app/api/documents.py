@@ -19,6 +19,7 @@ from backend.app.schemas.legal import (
 )
 from backend.app.services.security import get_current_user, verify_document_ownership
 from backend.app.services.parser import DocumentParser
+from backend.app.services.cache import document_cache, query_cache
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -127,6 +128,12 @@ def get_document(
 ):
     doc = verify_document_ownership(document_id, current_user, db)
     
+    # Sub-millisecond LRU cache lookup for full document intelligence
+    cache_key = f"{current_user.id}:{document_id}:{doc.updated_at.isoformat() if doc.updated_at else ''}"
+    cached = document_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     # Build analysis response if analyzed
     analysis_resp = None
     if doc.status == "analyzed":
@@ -168,6 +175,7 @@ def get_document(
         pages=[{"id": p.id, "page_number": p.page_number, "text": p.text} for p in sorted(doc.pages, key=lambda x: x.page_number)],
         analysis=analysis_resp
     )
+    document_cache.set(cache_key, res)
     return res
 
 @router.delete("/{document_id}")
@@ -177,6 +185,10 @@ def delete_document(
     db: Session = Depends(get_db)
 ):
     doc = verify_document_ownership(document_id, current_user, db)
+    # Invalidate cache
+    document_cache.delete(f"{current_user.id}:{document_id}")
+    query_cache.clear()
+
     # Delete file from storage if exists
     if os.path.exists(doc.file_path):
         try:

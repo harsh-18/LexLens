@@ -2,29 +2,55 @@ import json
 import math
 import re
 from typing import List, Dict, Any, Optional
+import numpy as np
 from sqlalchemy.orm import Session
 from backend.app.models.legal import Chunk, Clause
 from backend.app.services.ai_providers import AIProviderFactory
 from backend.app.services.cache import query_cache
 
+# In-memory caches for high-throughput sub-millisecond retrieval
+_CHUNK_TOKEN_CACHE: Dict[str, List[str]] = {}
+_CHUNK_VEC_CACHE: Dict[str, np.ndarray] = {}
+
 class HybridRetriever:
+    @staticmethod
+    def get_chunk_tokens(chunk_id: str, chunk_text: str) -> List[str]:
+        """Memoized tokenization for sub-millisecond BM25 scoring."""
+        if chunk_id in _CHUNK_TOKEN_CACHE:
+            return _CHUNK_TOKEN_CACHE[chunk_id]
+        tokens = re.findall(r"\w+", chunk_text.lower())
+        if len(_CHUNK_TOKEN_CACHE) > 5000:
+            _CHUNK_TOKEN_CACHE.clear()
+        _CHUNK_TOKEN_CACHE[chunk_id] = tokens
+        return tokens
+
     @staticmethod
     def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
         if not vec_a or not vec_b or len(vec_a) != len(vec_b):
             return 0.0
-        dot = sum(a * b for a, b in zip(vec_a, vec_b))
-        norm_a = math.sqrt(sum(a * a for a in vec_a))
-        norm_b = math.sqrt(sum(b * b for b in vec_b))
-        if norm_a == 0.0 or norm_b == 0.0:
-            return 0.0
-        return dot / (norm_a * norm_b)
+        try:
+            a = np.asarray(vec_a, dtype=np.float32)
+            b = np.asarray(vec_b, dtype=np.float32)
+            denom = (np.linalg.norm(a) * np.linalg.norm(b))
+            if denom == 0.0:
+                return 0.0
+            return float(np.dot(a, b) / denom)
+        except Exception:
+            dot = sum(x * y for x, y in zip(vec_a, vec_b))
+            norm_a = math.sqrt(sum(x * x for x in vec_a))
+            norm_b = math.sqrt(sum(y * y for y in vec_b))
+            if norm_a == 0.0 or norm_b == 0.0:
+                return 0.0
+            return dot / (norm_a * norm_b)
 
     @staticmethod
-    def bm25_score(query_tokens: List[str], chunk_text: str) -> float:
+    def bm25_score(query_tokens: List[str], chunk_text: str, chunk_id: Optional[str] = None) -> float:
         """
-        Lightweight BM25 term frequency / inverse document frequency scoring.
+        Lightweight BM25 term frequency / inverse document frequency scoring
+        with memoized tokenization.
         """
-        text_tokens = re.findall(r"\w+", chunk_text.lower())
+        cid = chunk_id or str(hash(chunk_text))
+        text_tokens = HybridRetriever.get_chunk_tokens(cid, chunk_text)
         if not text_tokens:
             return 0.0
         
@@ -63,26 +89,48 @@ class HybridRetriever:
         if not chunks:
             return []
 
-        # 1. Sparse BM25 Scoring
+        # 1. Sparse BM25 Scoring with cached tokenization
         q_tokens = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 2]
         bm25_ranked = []
         for c in chunks:
-            s = HybridRetriever.bm25_score(q_tokens, c.text)
+            s = HybridRetriever.bm25_score(q_tokens, c.text, chunk_id=c.id)
             bm25_ranked.append((c, s))
         bm25_ranked.sort(key=lambda x: x[1], reverse=True)
 
-        # 2. Dense Vector Scoring
+        # 2. Vectorized Dense Vector Scoring via NumPy
         embed_provider = AIProviderFactory.get_embedding_provider()
         dense_ranked = []
         try:
             q_emb = embed_provider.embed_query(query)
+            q_vec = np.asarray(q_emb, dtype=np.float32)
+            q_norm = np.linalg.norm(q_vec)
+
+            # Check if all chunks have embeddings
+            valid_chunks = []
+            chunk_vectors = []
             for c in chunks:
                 if c.embedding_json:
-                    c_emb = json.loads(c.embedding_json)
-                    sim = HybridRetriever.cosine_similarity(q_emb, c_emb)
+                    if c.id not in _CHUNK_VEC_CACHE:
+                        if len(_CHUNK_VEC_CACHE) > 5000:
+                            _CHUNK_VEC_CACHE.clear()
+                        _CHUNK_VEC_CACHE[c.id] = np.asarray(json.loads(c.embedding_json), dtype=np.float32)
+                    vec = _CHUNK_VEC_CACHE[c.id]
+                    valid_chunks.append(c)
+                    chunk_vectors.append(vec)
                 else:
-                    sim = 0.0
-                dense_ranked.append((c, sim))
+                    dense_ranked.append((c, 0.0))
+
+            if chunk_vectors and q_norm > 0:
+                mat = np.vstack(chunk_vectors)
+                norms = np.linalg.norm(mat, axis=1) * q_norm
+                norms[norms == 0] = 1e-9
+                sims = np.dot(mat, q_vec) / norms
+                for c, sim in zip(valid_chunks, sims):
+                    dense_ranked.append((c, float(sim)))
+            else:
+                for c in valid_chunks:
+                    dense_ranked.append((c, 0.0))
+
             dense_ranked.sort(key=lambda x: x[1], reverse=True)
         except Exception:
             # Fallback to BM25 ranks

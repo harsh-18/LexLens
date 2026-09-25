@@ -4,7 +4,7 @@ from sqlalchemy import func
 from backend.app.database import get_db
 from backend.app.models.document import Document
 from backend.app.models.legal import QAMessage, EvaluationRun
-from backend.app.services.cache import embedding_cache, query_cache
+from backend.app.services.cache import embedding_cache, query_cache, document_cache
 
 router = APIRouter(prefix="/metrics", tags=["Observability & Metrics"])
 
@@ -47,6 +47,9 @@ def get_system_metrics(db: Session = Depends(get_db)):
         "efficiency_and_caching": {
             "embedding_cache": embedding_cache.stats(),
             "retrieval_query_cache": query_cache.stats(),
+            "document_cache": document_cache.stats(),
+            "database_engine": "SQLite WAL Mode (Synchronous=NORMAL, CacheSize=10000, TempStore=MEMORY)",
+            "vector_engine": "NumPy C-Accelerated Vectorized Similarity Matrix",
             "gzip_compression": "Enabled (Threshold 1000B)"
         }
     }

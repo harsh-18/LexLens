@@ -60,12 +60,20 @@ class LRUTTLCache:
                 "hit_ratio_percent": hit_ratio
             }
 
+    def delete(self, key: str) -> None:
+        hashed = self._hash_key(key)
+        with self._lock:
+            if hashed in self._cache:
+                del self._cache[hashed]
+
     def clear(self) -> None:
         with self._lock:
             self._cache.clear()
             self.hits = 0
             self.misses = 0
 
-# Global singletons
+# Global singletons for memory efficiency
 embedding_cache = LRUTTLCache(maxsize=5000, default_ttl=7200)
 query_cache = LRUTTLCache(maxsize=1000, default_ttl=1800)
+document_cache = LRUTTLCache(maxsize=500, default_ttl=3600)
+
