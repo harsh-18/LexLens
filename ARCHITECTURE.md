@@ -66,6 +66,7 @@
    - `missing_protections.py`: Missing protection auditor (liability cap, mutual confidentiality, non-solicitation).
    - `retrieval.py`: Hybrid search combining BM25 keyword matching, Gemini dense vector cosine similarity, and Reciprocal Rank Fusion (RRF).
    - `claim_validator.py`: Post-generation claim verifier ensuring claims are directly traceable to retrieved chunks.
+   - `cache.py`: High-performance in-memory LRU TTL Cache (`LRUTTLCache`) for vector embeddings and search queries, eliminating redundant LLM API calls.
    - `security.py`: Prompt-injection defense boundaries (`<untrusted_document_data>`), path traversal prevention, role-based document authorization.
    - `demo_seeder.py`: Ready-to-use realistic legal contracts with deterministic pre-analyzed fixtures for 1-click evaluation.
 
@@ -73,8 +74,13 @@
    - Normalized relational tables in SQLite for Documents, Pages, Chunks, Clauses, Parties, Obligations, Rights, Deadlines, Restrictions, Contradictions, Missing Protections, and Q&A history.
 
 ### 2.2 Frontend (`frontend/`)
-- Pure modern Vanilla CSS system (custom design tokens, glassmorphic cards, responsive panels, typography, accessible contrast, smooth micro-interactions).
+- Pure modern Vanilla CSS system (custom design tokens, glassmorphic cards, responsive panels, typography, WCAG 2.1 AA accessible contrast, smooth micro-interactions).
 - React 19 + TypeScript + Vite.
+- **Accessibility & Inclusive Design**:
+  - Single `<main id="main-workspace">` landmark, `<header role="banner">`, `<nav aria-label="...">`, `<section role="region">`.
+  - Accessible tab pattern (`role="tablist"`, `role="tab"`, `aria-selected`, `aria-controls`, `role="tabpanel"`).
+  - Modal dialog trapping with `role="dialog"`, `aria-modal="true"`, and global `Escape` key listeners.
+  - High-visibility keyboard focus indicators (`:focus-visible`) and skip-to-content link.
 - 3-Panel Document Workspace:
   - Navigation Panel: Clause hierarchy, category filters.
   - Document Viewer: Full text/page view with interactive citation clicking and source highlighting.

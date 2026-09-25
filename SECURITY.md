@@ -39,3 +39,25 @@ All retrieved chunks and user prompts pass through `SecurityService.sanitize_unt
 ### 2.4 Post-Generation Claim Validation
 - Model responses are cross-checked by `ClaimValidator` against retrieved evidence chunks before being delivered.
 - Unsubstantiated numeric assertions (e.g. uncorroborated penalties or deadlines) are flagged.
+
+### 2.5 Binary File Upload Header Verification (Magic Bytes)
+- All uploaded files undergo binary header validation in `DocumentParser.validate_file_safety()`:
+  - PDF files must verify `%PDF-` signature.
+  - DOCX files must verify `PK\x03\x04` ZIP archive signature.
+  - Executable binaries (`MZ` Windows PE and `\x7fELF` Linux binaries) are strictly rejected, preventing disguised malicious payloads.
+
+### 2.6 Production HTTP Security Headers
+- Every HTTP response is hardened with production-grade security headers:
+  - `X-Content-Type-Options: nosniff` (prevents MIME type sniffing)
+  - `X-Frame-Options: DENY` (prevents clickjacking)
+  - `X-XSS-Protection: 1; mode=block`
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (enforces HTTPS)
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: geolocation=(), camera=(), microphone=()`
+  - `Content-Security-Policy (CSP)`: restricts unauthorized script and resource origins.
+
+### 2.7 Sliding-Window IP Rate Limiter
+- Protects API endpoints against Denial of Service (DoS) and automated scraping:
+  - Sliding 60-second window limiting each IP address to 120 requests/minute.
+  - Exceeding clients receive HTTP `429 Too Many Requests` with a `Retry-After: 60` response header.
+
