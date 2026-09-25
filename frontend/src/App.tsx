@@ -175,7 +175,13 @@ export const App: React.FC = () => {
           <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>Loading Legal Intelligence...</div>
         </div>
       ) : currentDoc ? (
-        <div className="workspace-grid" style={{ marginTop: '16px' }}>
+        <main
+          id="main-workspace"
+          role="main"
+          aria-label="Legal Document Intelligence Workspace"
+          className="workspace-grid"
+          style={{ marginTop: '16px' }}
+        >
           {/* Left Panel: Clause Navigator */}
           <ClauseNavigator
             clauses={currentDoc.analysis?.clauses || []}
@@ -193,22 +199,34 @@ export const App: React.FC = () => {
           />
 
           {/* Right Panel: Intelligence Suite */}
-          <aside className="glass-panel" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            overflow: 'hidden'
-          }}>
-            {/* Intelligence Tabs Header */}
-            <div style={{
+          <aside
+            role="region"
+            aria-label="Contract Intelligence Analysis"
+            className="glass-panel"
+            style={{
               display: 'flex',
-              borderBottom: '1px solid var(--border-subtle)',
-              background: 'rgba(11, 15, 26, 0.6)',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap'
-            }}>
+              flexDirection: 'column',
+              height: '100%',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Intelligence Tabs Header */}
+            <div
+              role="tablist"
+              aria-label="Intelligence Navigation Tabs"
+              style={{
+                display: 'flex',
+                borderBottom: '1px solid var(--border-subtle)',
+                background: 'rgba(11, 15, 26, 0.6)',
+                overflowX: 'auto',
+                whiteSpace: 'nowrap'
+              }}
+            >
               <button
                 id="tab-btn-contradictions"
+                role="tab"
+                aria-selected={rightPanelTab === 'contradictions'}
+                aria-controls="panel-contradictions"
                 onClick={() => setRightPanelTab('contradictions')}
                 style={{
                   padding: '10px 11px',
@@ -224,12 +242,15 @@ export const App: React.FC = () => {
                   gap: '5px'
                 }}
               >
-                <AlertTriangle size={13} color="#f59e0b" />
+                <AlertTriangle size={13} color="#f59e0b" aria-hidden="true" />
                 Conflicts ({currentDoc.analysis?.contradictions?.length || 0})
               </button>
 
               <button
                 id="tab-btn-obligations"
+                role="tab"
+                aria-selected={rightPanelTab === 'obligations'}
+                aria-controls="panel-obligations"
                 onClick={() => setRightPanelTab('obligations')}
                 style={{
                   padding: '10px 11px',
@@ -245,12 +266,15 @@ export const App: React.FC = () => {
                   gap: '5px'
                 }}
               >
-                <CheckSquare size={13} />
+                <CheckSquare size={13} aria-hidden="true" />
                 Obligations ({currentDoc.analysis?.obligations?.length || 0})
               </button>
 
               <button
                 id="tab-btn-timeline"
+                role="tab"
+                aria-selected={rightPanelTab === 'timeline'}
+                aria-controls="panel-timeline"
                 onClick={() => setRightPanelTab('timeline')}
                 style={{
                   padding: '10px 11px',
@@ -266,12 +290,15 @@ export const App: React.FC = () => {
                   gap: '5px'
                 }}
               >
-                <Clock size={13} />
+                <Clock size={13} aria-hidden="true" />
                 Timeline ({currentDoc.analysis?.deadlines?.length || 0})
               </button>
 
               <button
                 id="tab-btn-missing"
+                role="tab"
+                aria-selected={rightPanelTab === 'missing'}
+                aria-controls="panel-missing"
                 onClick={() => setRightPanelTab('missing')}
                 style={{
                   padding: '10px 11px',
@@ -287,12 +314,15 @@ export const App: React.FC = () => {
                   gap: '5px'
                 }}
               >
-                <ShieldAlert size={13} color="var(--accent-rose)" />
+                <ShieldAlert size={13} color="var(--accent-rose)" aria-hidden="true" />
                 Missing ({currentDoc.analysis?.missing_protections?.length || 0})
               </button>
 
               <button
                 id="tab-btn-chat"
+                role="tab"
+                aria-selected={rightPanelTab === 'chat'}
+                aria-controls="panel-chat"
                 onClick={() => setRightPanelTab('chat')}
                 style={{
                   padding: '10px 11px',
@@ -308,12 +338,15 @@ export const App: React.FC = () => {
                   gap: '5px'
                 }}
               >
-                <MessageSquare size={13} color="var(--accent-cyan)" />
+                <MessageSquare size={13} color="var(--accent-cyan)" aria-hidden="true" />
                 Q&A
               </button>
 
               <button
                 id="tab-btn-overview"
+                role="tab"
+                aria-selected={rightPanelTab === 'overview'}
+                aria-controls="panel-overview"
                 onClick={() => setRightPanelTab('overview')}
                 style={{
                   padding: '10px 11px',
@@ -331,7 +364,13 @@ export const App: React.FC = () => {
             </div>
 
             {/* Tab Contents */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div
+              role="tabpanel"
+              id={`panel-${rightPanelTab}`}
+              aria-labelledby={`tab-btn-${rightPanelTab}`}
+              tabIndex={0}
+              style={{ flex: 1, overflowY: 'auto' }}
+            >
               {rightPanelTab === 'overview' && currentDoc.analysis && (
                 <AnalysisOverview
                   analysis={currentDoc.analysis}
@@ -376,7 +415,7 @@ export const App: React.FC = () => {
               )}
             </div>
           </aside>
-        </div>
+        </main>
       ) : null}
 
       {/* Modals */}

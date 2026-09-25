@@ -21,9 +21,34 @@ class ParsedDocument:
 
 class DocumentParser:
     @staticmethod
+    def validate_file_safety(file_path: str, ext: str) -> None:
+        """Verify binary file headers to protect against malicious disguised executables."""
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Uploaded file path does not exist")
+        
+        with open(file_path, "rb") as f:
+            header = f.read(16)
+        
+        # Block Windows PE/EXE and Linux ELF binaries
+        if header.startswith(b"MZ") or header.startswith(b"\x7fELF"):
+            raise ValueError("Executable binaries or malicious payload files are strictly prohibited.")
+
+        # Validate PDF signature
+        if ext == ".pdf":
+            if not header.startswith(b"%PDF"):
+                raise ValueError("Corrupted or invalid PDF file header signature.")
+        # Validate DOCX (ZIP format) signature
+        elif ext in [".docx", ".doc"]:
+            if not header.startswith(b"PK\x03\x04"):
+                raise ValueError("Invalid DOCX archive signature.")
+
+    @staticmethod
     def parse_file(file_path: str, original_filename: str) -> ParsedDocument:
         ext = Path(original_filename).suffix.lower()
         file_size = os.path.getsize(file_path)
+        
+        # Enforce security header validation
+        DocumentParser.validate_file_safety(file_path, ext)
         
         if ext == ".pdf":
             return DocumentParser._parse_pdf(file_path, original_filename, file_size)
@@ -32,7 +57,6 @@ class DocumentParser:
         elif ext in [".txt", ".md"]:
             return DocumentParser._parse_txt(file_path, original_filename, file_size)
         else:
-            # Fallback to plain text read
             return DocumentParser._parse_txt(file_path, original_filename, file_size)
 
     @staticmethod

@@ -1,6 +1,6 @@
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -152,7 +152,7 @@ def run_evaluation_benchmark(db: Session = Depends(get_db)):
     eval_record = EvaluationRun(
         id=str(uuid.uuid4()),
         name="Automated Groundedness & Security Benchmark",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         groundedness_score=avg_groundedness,
         citation_coverage=avg_precision,
         unsupported_claim_rate=round(unsupported_count / num_tests, 2),
@@ -165,7 +165,7 @@ def run_evaluation_benchmark(db: Session = Depends(get_db)):
 
     return EvaluationReportResponse(
         evaluation_id=eval_record.id,
-        timestamp=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         overall_score=overall,
         groundedness_score=avg_groundedness,
         citation_coverage=avg_precision,

@@ -63,18 +63,31 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpl
     }
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      padding: '20px'
-    }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upload-modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: '20px'
+      }}
+    >
       <div className="glass-panel" style={{
         width: '100%',
         maxWidth: '520px',
@@ -84,18 +97,32 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpl
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Upload Legal Document</h3>
+            <h3 id="upload-modal-title" style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Upload Legal Document</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Secure ingestion for PDF, DOCX, and TXT agreements.
             </p>
           </div>
-          <button onClick={onClose} className="btn-ghost" style={{ padding: '6px', borderRadius: '50%' }}>
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="btn-ghost"
+            style={{ padding: '6px', borderRadius: '50%' }}
+            aria-label="Close upload dialog"
+          >
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
         {/* Drop Area */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Click to browse files or drag and drop legal document here"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
@@ -113,6 +140,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpl
         >
           <input
             ref={fileInputRef}
+            id="file-upload-input"
+            aria-label="Choose file to upload"
             type="file"
             accept=".pdf,.docx,.doc,.txt,.md"
             style={{ display: 'none' }}

@@ -50,20 +50,33 @@ export const ContractComparisonModal: React.FC<ContractComparisonModalProps> = (
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      padding: '24px'
-    }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compare-modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: '24px'
+      }}
+    >
       <div className="glass-panel" style={{
         width: '100%',
         maxWidth: '980px',
@@ -82,26 +95,33 @@ export const ContractComparisonModal: React.FC<ContractComparisonModalProps> = (
           background: 'rgba(15, 20, 34, 0.9)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              background: 'rgba(99, 102, 241, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
+            <div
+              aria-hidden="true"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                background: 'rgba(99, 102, 241, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
               <GitCompare size={18} color="var(--accent-primary)" />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Contract Version Comparison</h3>
+              <h3 id="compare-modal-title" style={{ fontSize: '1.15rem', fontWeight: 700 }}>Contract Version Comparison</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Differential clause analysis, modified obligations, and shifting risk allocations.
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="btn-ghost" style={{ padding: '6px', borderRadius: '50%' }}>
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="btn-ghost"
+            style={{ padding: '6px', borderRadius: '50%' }}
+            aria-label="Close contract version comparison dialog"
+          >
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 

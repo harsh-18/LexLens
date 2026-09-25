@@ -64,12 +64,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
   return (
-    <main className="glass-panel" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden'
-    }}>
+    <section
+      role="region"
+      aria-label="Document Reader and Verbatim Clause Viewer"
+      className="glass-panel"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}
+    >
       {/* Top Controls Toolbar */}
       <div style={{
         padding: '12px 18px',
@@ -81,7 +86,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       }}>
         {/* Document Title & Pages Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FileText size={17} color="var(--accent-primary)" />
+          <FileText size={17} color="var(--accent-primary)" aria-hidden="true" />
           <div>
             <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{document.title}</div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -91,14 +96,21 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
 
         {/* View Mode Toggle: Verbatim Document vs Plain Explanation */}
-        <div style={{
-          display: 'flex',
-          background: 'var(--bg-input)',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border-subtle)',
-          padding: '2px'
-        }}>
+        <div
+          role="tablist"
+          aria-label="Document reading mode"
+          style={{
+            display: 'flex',
+            background: 'var(--bg-input)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-subtle)',
+            padding: '2px'
+          }}
+        >
           <button
+            role="tab"
+            aria-selected={activeTab === 'verbatim'}
+            aria-label="Switch to Verbatim Contract Text View"
             onClick={() => setActiveTab('verbatim')}
             style={{
               padding: '4px 12px',
@@ -114,6 +126,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             Verbatim Text
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'plain'}
+            aria-label="Switch to Plain English Explanation View"
             onClick={() => setActiveTab('plain')}
             style={{
               padding: '4px 12px',
@@ -133,9 +148,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* Search & Zoom Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Search size={13} color="var(--text-muted)" style={{ position: 'absolute', left: '8px' }} />
+            <Search size={13} color="var(--text-muted)" style={{ position: 'absolute', left: '8px' }} aria-hidden="true" />
             <input
               type="text"
+              id="doc-viewer-search-input"
+              aria-label="Find text in document pages"
               placeholder="Find in page..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -157,10 +174,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             className="btn-ghost"
             style={{ padding: '4px', borderRadius: '4px' }}
             title="Decrease font size"
+            aria-label="Decrease reading font size"
           >
-            <ZoomOut size={16} />
+            <ZoomOut size={16} aria-hidden="true" />
           </button>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', minWidth: '24px', textAlign: 'center' }}>
+          <span
+            aria-label={`Current font size ${fontSize} pixels`}
+            style={{ fontSize: '0.75rem', color: 'var(--text-muted)', minWidth: '24px', textAlign: 'center' }}
+          >
             {fontSize}px
           </span>
           <button
@@ -168,8 +189,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             className="btn-ghost"
             style={{ padding: '4px', borderRadius: '4px' }}
             title="Increase font size"
+            aria-label="Increase reading font size"
           >
-            <ZoomIn size={16} />
+            <ZoomIn size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -375,6 +397,6 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 };

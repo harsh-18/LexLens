@@ -1,12 +1,14 @@
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(extra="allow")
+
     PROJECT_NAME: str = "LexLens"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
@@ -34,9 +36,6 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
-
-    class Config:
-        extra = "allow"
 
 settings = Settings()
 os.makedirs(settings.STORAGE_DIR, exist_ok=True)

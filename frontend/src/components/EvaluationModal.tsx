@@ -12,6 +12,14 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({ isOpen, onClos
   const [report, setReport] = useState<EvaluationReportResponse | null>(null);
   const [running, setRunning] = useState(false);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   const handleRunBenchmark = async () => {
@@ -27,17 +35,22 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      padding: '24px'
-    }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="eval-modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: '24px'
+      }}
+    >
       <div className="glass-panel" style={{
         width: '100%',
         maxWidth: '900px',
@@ -56,9 +69,9 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({ isOpen, onClos
           background: 'rgba(15, 20, 34, 0.9)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <CheckCircle2 size={20} color="var(--accent-emerald)" />
+            <CheckCircle2 size={20} color="var(--accent-emerald)" aria-hidden="true" />
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>AI Evaluation & Groundedness Benchmark</h3>
+              <h3 id="eval-modal-title" style={{ fontSize: '1.15rem', fontWeight: 700 }}>AI Evaluation & Groundedness Benchmark</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Rigorous automated verification of retrieval recall, citation precision, prompt injection defense, and claim faithfulness.
               </p>
@@ -70,20 +83,26 @@ export const EvaluationModal: React.FC<EvaluationModalProps> = ({ isOpen, onClos
               onClick={handleRunBenchmark}
               className="btn btn-primary btn-sm"
               disabled={running}
+              aria-label="Run Live Automated AI Benchmark"
             >
               {running ? (
                 <>
-                  <Loader2 size={14} className="highlight-pulse" />
+                  <Loader2 size={14} className="highlight-pulse" aria-hidden="true" />
                   Running Benchmarks...
                 </>
               ) : (
                 <>
-                  <Play size={14} /> Run Live Benchmark
+                  <Play size={14} aria-hidden="true" /> Run Live Benchmark
                 </>
               )}
             </button>
-            <button onClick={onClose} className="btn-ghost" style={{ padding: '6px', borderRadius: '50%' }}>
-              <X size={20} />
+            <button
+              onClick={onClose}
+              className="btn-ghost"
+              style={{ padding: '6px', borderRadius: '50%' }}
+              aria-label="Close benchmark evaluation dialog"
+            >
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

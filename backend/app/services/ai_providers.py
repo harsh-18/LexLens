@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from backend.app.config import settings
+from backend.app.services.cache import embedding_cache
 
 logger = logging.getLogger(__name__)
 
@@ -107,17 +108,24 @@ class GeminiEmbeddingProvider(BaseEmbeddingProvider):
             return [FallbackEmbeddingProvider().embed_query(t) for t in texts]
         
         embeddings = []
-        # Batch in chunks of 10 to avoid rate issues
         batch_size = 10
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i+batch_size]
             for text in batch:
+                cache_key = f"{self.model}:{text}"
+                cached = embedding_cache.get(cache_key)
+                if cached is not None:
+                    embeddings.append(cached)
+                    continue
+
                 try:
                     res = self.client.models.embed_content(
                         model=self.model,
-                        contents=text[:8000]  # truncate overly large chunks
+                        contents=text[:8000]
                     )
-                    embeddings.append(res.embeddings[0].values)
+                    vec = res.embeddings[0].values
+                    embedding_cache.set(cache_key, vec)
+                    embeddings.append(vec)
                 except Exception as e:
                     logger.warning(f"Gemini embedding fallback for item: {e}")
                     embeddings.append(FallbackEmbeddingProvider().embed_query(text))
@@ -126,12 +134,20 @@ class GeminiEmbeddingProvider(BaseEmbeddingProvider):
     def embed_query(self, query: str) -> List[float]:
         if not self.client:
             return FallbackEmbeddingProvider().embed_query(query)
+
+        cache_key = f"{self.model}:{query}"
+        cached = embedding_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         try:
             res = self.client.models.embed_content(
                 model=self.model,
                 contents=query[:4000]
             )
-            return res.embeddings[0].values
+            vec = res.embeddings[0].values
+            embedding_cache.set(cache_key, vec)
+            return vec
         except Exception as e:
             logger.warning(f"Gemini embedding fallback for query: {e}")
             return FallbackEmbeddingProvider().embed_query(query)

@@ -1,16 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
 class PartySchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     name: str
     role: str
     party_type: str = "Entity"
 
-    class Config:
-        from_attributes = True
-
 class ClauseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     clause_number: Optional[str] = None
     title: Optional[str] = None
@@ -22,10 +23,9 @@ class ClauseSchema(BaseModel):
     risk_note: Optional[str] = None
     questions_to_ask: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 class ObligationSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     actor: str
     action: str
@@ -40,10 +40,9 @@ class ObligationSchema(BaseModel):
     source_page: int = 1
     excerpt: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 class RightSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     holder: str
     right_text: str
@@ -52,10 +51,9 @@ class RightSchema(BaseModel):
     source_page: int = 1
     excerpt: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 class DeadlineSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     event: str
     duration_or_date: str
@@ -65,10 +63,9 @@ class DeadlineSchema(BaseModel):
     source_clause_number: Optional[str] = None
     source_page: int = 1
 
-    class Config:
-        from_attributes = True
-
 class RestrictionSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     restriction_type: str
     restricted_party: str
@@ -78,10 +75,9 @@ class RestrictionSchema(BaseModel):
     source_clause_number: Optional[str] = None
     source_page: int = 1
 
-    class Config:
-        from_attributes = True
-
 class FinancialTermSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     item: str
     amount: str
@@ -90,10 +86,9 @@ class FinancialTermSchema(BaseModel):
     condition: Optional[str] = None
     source_clause_number: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 class ContradictionSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     title: str
     clause_a: str
@@ -105,18 +100,14 @@ class ContradictionSchema(BaseModel):
     explanation: str
     severity: str = "Moderate"
 
-    class Config:
-        from_attributes = True
-
 class MissingProtectionSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = None
     protection_type: str
     description: str
     recommendation: str
     severity: str = "Notice"
-
-    class Config:
-        from_attributes = True
 
 class FullAnalysisResponse(BaseModel):
     document_id: str

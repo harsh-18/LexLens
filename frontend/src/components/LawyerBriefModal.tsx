@@ -37,6 +37,14 @@ export const LawyerBriefModal: React.FC<LawyerBriefModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -44,17 +52,22 @@ export const LawyerBriefModal: React.FC<LawyerBriefModalProps> = ({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(10px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      padding: '24px'
-    }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lawyer-brief-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: '24px'
+      }}
+    >
       <div className="glass-panel" style={{
         width: '100%',
         maxWidth: '880px',
@@ -73,9 +86,9 @@ export const LawyerBriefModal: React.FC<LawyerBriefModalProps> = ({
           background: 'rgba(15, 20, 34, 0.9)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Scale size={20} color="var(--accent-primary)" />
+            <Scale size={20} color="var(--accent-primary)" aria-hidden="true" />
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Lawyer Consultation Preparation Brief</h3>
+              <h3 id="lawyer-brief-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Lawyer Consultation Preparation Brief</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Structured briefing packet for your attorney meeting.
               </p>
@@ -83,11 +96,20 @@ export const LawyerBriefModal: React.FC<LawyerBriefModalProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button onClick={handlePrint} className="btn btn-secondary btn-sm">
-              <Printer size={14} /> Print / Export PDF
+            <button
+              onClick={handlePrint}
+              className="btn btn-secondary btn-sm"
+              aria-label="Print or Export Lawyer Brief as PDF"
+            >
+              <Printer size={14} aria-hidden="true" /> Print / Export PDF
             </button>
-            <button onClick={onClose} className="btn-ghost" style={{ padding: '6px', borderRadius: '50%' }}>
-              <X size={20} />
+            <button
+              onClick={onClose}
+              className="btn-ghost"
+              style={{ padding: '6px', borderRadius: '50%' }}
+              aria-label="Close lawyer consultation brief dialog"
+            >
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

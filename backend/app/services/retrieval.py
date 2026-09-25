@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from backend.app.models.legal import Chunk, Clause
 from backend.app.services.ai_providers import AIProviderFactory
+from backend.app.services.cache import query_cache
 
 class HybridRetriever:
     @staticmethod
@@ -48,6 +49,11 @@ class HybridRetriever:
         top_k: int = 5,
         clause_filter: Optional[str] = None
     ) -> List[Dict[str, Any]]:
+        cache_key = f"{document_id}:{clause_filter}:{query.lower().strip()}:{top_k}"
+        cached = query_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         # Fetch all chunks for this document
         query_builder = db.query(Chunk).filter(Chunk.document_id == document_id)
         if clause_filter:
@@ -111,4 +117,5 @@ class HybridRetriever:
                 "score": score
             })
 
+        query_cache.set(cache_key, results)
         return results

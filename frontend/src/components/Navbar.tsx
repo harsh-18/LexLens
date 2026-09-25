@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isDemoLoading
 }) => {
   return (
-    <header style={{
+    <header role="banner" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -82,11 +82,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Document Selector & Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <nav aria-label="Main Application Controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {documents.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={16} color="var(--accent-primary)" />
+            <label htmlFor="document-select" className="sr-only">
+              Select Legal Document to Inspect
+            </label>
+            <FileText size={16} color="var(--accent-primary)" aria-hidden="true" />
             <select
+              id="document-select"
+              aria-label="Select Legal Document to Inspect"
               value={selectedDocId || ''}
               onChange={(e) => onSelectDoc(e.target.value)}
               style={{
@@ -115,9 +120,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onOpenUpload}
           className="btn btn-primary btn-sm"
           title="Upload PDF, DOCX or TXT"
+          aria-label="Upload Legal Document (PDF, DOCX, or TXT)"
         >
-          <Upload size={14} />
-          Upload Document
+          <Upload size={14} aria-hidden="true" />
+          <span>Upload Document</span>
         </button>
 
         <button
@@ -126,38 +132,42 @@ export const Navbar: React.FC<NavbarProps> = ({
           disabled={isDemoLoading}
           style={{ borderColor: 'rgba(99, 102, 241, 0.4)' }}
           title="Load pre-analyzed demo documents with contradictions"
+          aria-label="Load Demo Contract with Pre-Analyzed Inconsistencies"
         >
-          <Sparkles size={14} color="#a5b4fc" />
-          {isDemoLoading ? 'Loading Demo...' : 'Try Demo'}
+          <Sparkles size={14} color="#a5b4fc" aria-hidden="true" />
+          <span>{isDemoLoading ? 'Loading Demo...' : 'Try Demo'}</span>
         </button>
 
         <button
           onClick={onOpenCompare}
           className="btn btn-secondary btn-sm"
           title="Side-by-side contract version comparison"
+          aria-label="Compare Contract Versions Side-by-Side"
         >
-          <GitCompare size={14} />
-          Compare Versions
+          <GitCompare size={14} aria-hidden="true" />
+          <span>Compare Versions</span>
         </button>
 
         <button
           onClick={onOpenEvaluation}
           className="btn btn-ghost btn-sm"
           title="Run automated evaluation benchmark"
+          aria-label="View Automated Benchmark & RAG Faithfulness Scores"
         >
-          <CheckCircle2 size={15} color="var(--accent-emerald)" />
-          Benchmark
+          <CheckCircle2 size={15} color="var(--accent-emerald)" aria-hidden="true" />
+          <span>Benchmark</span>
         </button>
 
         <button
           onClick={onOpenMetrics}
           className="btn btn-ghost btn-sm"
           title="System Observability & Latency"
+          aria-label="View System Observability and Latency Telemetry"
         >
-          <Activity size={15} color="var(--accent-cyan)" />
-          Telemetry
+          <Activity size={15} color="var(--accent-cyan)" aria-hidden="true" />
+          <span>Telemetry</span>
         </button>
-      </div>
+      </nav>
     </header>
   );
 };

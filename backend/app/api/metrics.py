@@ -4,6 +4,7 @@ from sqlalchemy import func
 from backend.app.database import get_db
 from backend.app.models.document import Document
 from backend.app.models.legal import QAMessage, EvaluationRun
+from backend.app.services.cache import embedding_cache, query_cache
 
 router = APIRouter(prefix="/metrics", tags=["Observability & Metrics"])
 
@@ -42,5 +43,10 @@ def get_system_metrics(db: Session = Depends(get_db)):
             "primary_llm": "Google Gemini 3.8 Flash",
             "embedding_model": "Google Gemini Embedding 001 (3072 dim)",
             "vector_search": "Cosine Similarity + BM25 Reciprocal Rank Fusion"
+        },
+        "efficiency_and_caching": {
+            "embedding_cache": embedding_cache.stats(),
+            "retrieval_query_cache": query_cache.stats(),
+            "gzip_compression": "Enabled (Threshold 1000B)"
         }
     }

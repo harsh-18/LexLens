@@ -1,9 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from backend.app.schemas.legal import FullAnalysisResponse
 
 class DocumentMetadataResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     user_id: str
     title: str
@@ -20,16 +22,12 @@ class DocumentMetadataResponse(BaseModel):
     uploaded_at: datetime
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 class DocumentPageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     page_number: int
     text: str
-
-    class Config:
-        from_attributes = True
 
 class DocumentDetailResponse(DocumentMetadataResponse):
     pages: List[DocumentPageResponse] = []

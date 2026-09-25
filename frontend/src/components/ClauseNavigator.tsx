@@ -30,17 +30,22 @@ export const ClauseNavigator: React.FC<ClauseNavigatorProps> = ({
   });
 
   return (
-    <aside className="glass-panel" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden'
-    }}>
+    <aside
+      role="region"
+      aria-label="Clauses and Document Structure Navigator"
+      className="glass-panel"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}
+    >
       {/* Header */}
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers size={16} color="var(--accent-primary)" />
+            <Layers size={16} color="var(--accent-primary)" aria-hidden="true" />
             <h4 style={{ fontSize: '0.92rem', fontWeight: 700 }}>Clauses & Structure</h4>
           </div>
           <span className="badge badge-muted" style={{ fontSize: '0.7rem' }}>
@@ -55,9 +60,11 @@ export const ClauseNavigator: React.FC<ClauseNavigatorProps> = ({
           alignItems: 'center',
           marginBottom: '8px'
         }}>
-          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px' }} />
+          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px' }} aria-hidden="true" />
           <input
             type="text"
+            id="clause-search-input"
+            aria-label="Filter clauses by number, title, or body text"
             placeholder="Search clause or text..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -75,16 +82,22 @@ export const ClauseNavigator: React.FC<ClauseNavigatorProps> = ({
         </div>
 
         {/* Category Pills */}
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          overflowX: 'auto',
-          paddingBottom: '4px',
-          whiteSpace: 'nowrap'
-        }}>
+        <div
+          role="group"
+          aria-label="Filter clauses by category"
+          style={{
+            display: 'flex',
+            gap: '6px',
+            overflowX: 'auto',
+            paddingBottom: '4px',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {categories.map((cat) => (
             <button
               key={cat}
+              aria-pressed={selectedCategory === cat}
+              aria-label={`Filter by category ${cat}`}
               onClick={() => setSelectedCategory(cat)}
               style={{
                 background: selectedCategory === cat ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255, 255, 255, 0.04)',
@@ -104,7 +117,11 @@ export const ClauseNavigator: React.FC<ClauseNavigatorProps> = ({
       </div>
 
       {/* Clause List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+      <div
+        role="region"
+        aria-label="Filtered Clauses List"
+        style={{ flex: 1, overflowY: 'auto', padding: '8px' }}
+      >
         {filteredClauses.length === 0 ? (
           <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
             No matching clauses found.
@@ -115,6 +132,16 @@ export const ClauseNavigator: React.FC<ClauseNavigatorProps> = ({
             return (
               <div
                 key={clause.id || idx}
+                role="button"
+                tabIndex={0}
+                aria-label={`Clause ${clause.clause_number}: ${clause.title || 'Untitled'}`}
+                aria-current={isSelected ? 'true' : undefined}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectClause(clause);
+                  }
+                }}
                 onClick={() => onSelectClause(clause)}
                 style={{
                   padding: '10px 12px',
