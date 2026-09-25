@@ -2,7 +2,11 @@ import json
 import math
 import re
 from typing import List, Dict, Any, Optional
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 from sqlalchemy.orm import Session
 from backend.app.models.legal import Chunk, Clause
 from backend.app.services.ai_providers import AIProviderFactory
@@ -10,7 +14,7 @@ from backend.app.services.cache import query_cache
 
 # In-memory caches for high-throughput sub-millisecond retrieval
 _CHUNK_TOKEN_CACHE: Dict[str, List[str]] = {}
-_CHUNK_VEC_CACHE: Dict[str, np.ndarray] = {}
+_CHUNK_VEC_CACHE: Dict[str, Any] = {}
 
 class HybridRetriever:
     @staticmethod
